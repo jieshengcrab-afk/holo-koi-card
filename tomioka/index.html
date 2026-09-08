@@ -53,7 +53,10 @@ uniform sampler2D tSubject,tBackground,tText,tLine;
 void main(){
  vec2 uv=vUv;
  vec2 su=parallax(uv,uScale,uDepth)*uSafeScale+uSafeOffset;
- vec2 bu=uv;
+ // Unified artwork: preserve water/character registration while enabling controls.
+ vec2 bu=(uv-.5)/max(uScale,1.)+.5;
+ bu+=uView.xy/max(abs(uView.z),.35)*(uDepth+uBgDepth)*.045;
+ bu=clamp(bu,0.,1.);
  vec4 sub=texture2D(tSubject,clamp(su,0.,1.));sub.a*=inside(su);
  vec3 bg=texture2D(tBackground,clamp(bu,0.,1.)).rgb;
  float w=wave(uv); vec3 foil=spectrum(w*.8+noise(uv*5.)*.12);
@@ -100,7 +103,7 @@ async function init(){
  const frontMat=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:fragment,side:THREE.FrontSide});const edgeMat=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:edgeFragment});const backMat=new THREE.ShaderMaterial({uniforms,vertexShader:vertex,fragmentShader:backFragment,side:THREE.FrontSide});
  root=new THREE.Group();const built=buildCard(frontMat,edgeMat,backMat);face=built.front;root.add(built.card);scene.add(root);
  if(!face)throw Error('卡牌几何构建失败。');
- setupControls();for(const id of ['scale','depth','bg-depth']){const el=$(id);el.disabled=true;el.closest('label').style.display='none';}new ResizeObserver(resize).observe(stage);resize();loading.remove();
+ setupControls();for(const id of ['scale','depth','bg-depth']){$(id).title='完整原畫模式：調整整體縮放／視差，非獨立人物分層';}new ResizeObserver(resize).observe(stage);resize();loading.remove();
  window.__holo={ready:true,config,renderer,root,uniforms,reset};renderer.setAnimationLoop(animate);
 }
 function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h||!renderer)return;const aspect=w/h;const halfH=5.65/targetZoom;camera.left=-halfH*aspect;camera.right=halfH*aspect;camera.top=halfH;camera.bottom=-halfH;camera.updateProjectionMatrix();renderer.setSize(w,h);composer.setSize(w,h);}
